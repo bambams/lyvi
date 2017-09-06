@@ -111,24 +111,23 @@ def init_metadata():
 def watch_player():
     """Main loop which checks for new song and updates the metadata."""
     while True:
-        if not player.running():
-            exit()
-        player.get_status()
-        if player.state == 'stop':
-            md.reset_tags()
-        elif (player.artist != md.artist
-                or player.title != md.title
-                or player.album != md.album):
-            needsupdate = ['lyrics', 'guitartabs']
-            if player.artist != md.artist:
-                needsupdate += ['artistbio']
-            if bg:
-                needsupdate += ['backdrops']
-                if player.album != md.album:
-                    needsupdate += ['cover']
-            md.set_tags()
-            for item in needsupdate:
-                thread(md.get, (item,))
+        if player.running():
+            player.get_status()
+            if player.state == 'stop':
+                md.reset_tags()
+            elif (player.artist != md.artist
+                    or player.title != md.title
+                    or player.album != md.album):
+                needsupdate = ['lyrics', 'guitartabs']
+                if player.artist != md.artist:
+                    needsupdate += ['artistbio']
+                if bg:
+                    needsupdate += ['backdrops']
+                    if player.album != md.album:
+                        needsupdate += ['cover']
+                md.set_tags()
+                for item in needsupdate:
+                    thread(md.get, (item,))
         time.sleep(1)
 
 
@@ -164,10 +163,12 @@ import lyvi.players
 if args.list_players:
     lyvi.players.list()
     sys.exit()
-player = lyvi.players.find()
-if not player:
-    sys.stderr.write('No running supported player found!\n')
-    sys.exit(1)
+player = None
+while True:
+    player = lyvi.players.find()
+    if player:
+        break
+    time.sleep(1)
 if args.command:
     if not player.send_command(args.command):
         sys.stderr.write('Unknown command: ' + args.command + '\n')
